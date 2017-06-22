@@ -1,6 +1,6 @@
 ---
 declared-services:
-  registered_triggers:
+  ow_triggers:
     label: cloudantNoSQLDB
     plan: Shared
 
@@ -13,4 +13,4 @@ applications:
   host: tox_rsseventprovider
   disk_quota: 1024M
   services:
-  - registered_triggers
+  - ow_triggers
