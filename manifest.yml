@@ -1,0 +1,16 @@
+---
+declared-services:
+  registered_triggers:
+    label: cloudantNoSQLDB
+    plan: Shared
+
+applications:
+- path: .
+  memory: 256M
+  instances: 1
+  domain: mybluemix.net
+  name: tox_rsseventprovider
+  host: tox_rsseventprovider
+  disk_quota: 1024M
+  services:
+  - registered_triggers
