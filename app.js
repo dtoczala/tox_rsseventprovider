@@ -39,6 +39,13 @@ var dbname='registered_triggers'
 
 var apiKey;//the api key used for the openwhisk whisk platform
 
+/*
+Grab the Cloudant service credentials
+We would use Cloudant if we were registering a trigger,
+which would require authentication.  Since we're just going
+with a web service, no authentication is required, and we hit
+the OpenWhisk action directly.
+*/
 if(process.env.VCAP_SERVICES) {//run on bluemix platform
     credentials = appEnv.getServiceCreds("ow_triggers");
     whiskhost = "openwhisk.ng.bluemix.net"
@@ -59,12 +66,19 @@ if(process.env.VCAP_SERVICES) {//run on bluemix platform
 
 }
 
+/*
+See if you have credentials
+*/
 if((!credentials) && (!credentials.username || !credentials.password)) {
     logger.error('No credentials provided')
     process.exit(1)
 }
 
-//POST
+/*
+POST
+The post allows you to register a trigger and have it persist in the
+attached Cloudant database.
+*/
 app.post('/rss',authorize, function(req, res) {
     var method  = "POST /rss";
     var newRequest = req.body;
@@ -119,6 +133,11 @@ app.post('/rss',authorize, function(req, res) {
     }
 });
 
+/*
+DELETE
+The delete allows you to remove a trigger in the
+attached Cloudant database.
+*/
 app.delete('/rss',authorize, function(req, res) {
     var deleted = deleteTrigger(req.body.namespace, req.body.name, req.user.uuid + ':' + req.user.key)
     if(deleted) {
@@ -129,7 +148,14 @@ app.delete('/rss',authorize, function(req, res) {
     }
 });
 
-//*----RSS method-----*
+/*
+----RSS method-----
+This checks the specified RSS feed and looks for recent events.
+If it finds one, then it either calls the web method for the action
+which notifies you of an event, or it hits the trigger that has been
+stored in the Cloudant database.  In either case, the impacted service,
+region and message are passed along in JSON.
+*/
 function checkFeedSourceUpdated(triggerIdentifier, callback)
 {
     var newTrigger = triggers[triggerIdentifier];
@@ -138,6 +164,9 @@ function checkFeedSourceUpdated(triggerIdentifier, callback)
     var filter = newTrigger.filter;
     var keywordsArray;
 
+    /* If you have a filter specified in the stored trigger,
+       split it and pull out each keyword.
+    */
     if(filter)
     {
         keywordsArray = filter.split(",");
@@ -206,6 +235,10 @@ function checkFeedSourceUpdated(triggerIdentifier, callback)
     });
 }
 
+/*
+This function fires the specified trigger in OpenWhisk, which
+will in turn fire off the desired action.
+*/
 function fireTrigger(namespace, name, whiskhost, payload, apiKey) {;
     var baseUrl = "https://" + whiskhost + "/api/v1/namespaces";
     var keyParts = apiKey.split(':');
